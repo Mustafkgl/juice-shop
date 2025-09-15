@@ -1,0 +1,22 @@
+name: Security Build
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  docker-build-and-sbom:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+      # ------------------------------
+      # Eklenen Semgrep Adımı
+      # ------------------------------
+      - name: Run Semgrep Scan
+        uses: returntocorp/semgrep-action@v1
+        with:
+          config: "p/ci"
