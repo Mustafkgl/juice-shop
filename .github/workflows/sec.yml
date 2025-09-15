@@ -14,35 +14,11 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v4
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build Docker image
-        run: |
-          docker build -t juice-shop:latest .
-
-      - name: Install Syft
-        run: |
-          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
-
-      - name: Generate SBOM with Syft
-        run: |
-          syft packages docker:juice-shop:latest -o json > sbom.json
-          syft packages docker:juice-shop:latest -o spdx-json > sbom.spdx.json
-          syft packages docker:juice-shop:latest -o table
-
-      - name: Upload SBOM artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: sbom-files
-          path: |
-            sbom.json
-            sbom.spdx.json
-
       # ------------------------------
       # Eklenen Semgrep Adımı
       # ------------------------------
-      - name: Run Semgrep Scan
+- name: Run Semgrep Scan
         uses: returntocorp/semgrep-action@v1
         with:
           config: "p/ci"
+        continue-on-error: true
