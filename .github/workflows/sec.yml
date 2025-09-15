@@ -18,7 +18,7 @@ jobs:
       # Eklenen Semgrep Adımı
       # ------------------------------
       - name: Run Semgrep Scan
-        uses: returntocorp/semgrep-action@v1
+        uses: semgrep/semgrep-action@v1
         with:
           config: "p/ci"
         continue-on-error: true
