@@ -22,9 +22,8 @@ jobs:
           docker build -t juice-shop:latest .
 
       - name: Install Syft
-        uses: anchore/syft-action@v0.19.0
-        with:
-          version: v1.17.0
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
 
       - name: Generate SBOM with Syft
         run: |
