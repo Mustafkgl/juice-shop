@@ -1,0 +1,17 @@
+name: Guvenlik Kontrolu
+
+# Bu workflow ne zaman çalışsın?
+# Hem push yapıldığında hem de Pull Request açıldığında çalışsın.
+on:
+  push:
+  pull_request:
+
+jobs:
+  # İşin adı (Status Check kısmında bu isim görünecek)
+  basit-tarama:
+    runs-on: ubuntu-latest  # GitHub'ın sağladığı sanal Ubuntu makinesinde çalış
+    steps:
+      
+      # İşte istediğin adım burası:
+      - name: Ekrana Mesaj Yaz
+        run: echo "Güvenlik Taraması Başlıyor"
