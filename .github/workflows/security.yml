@@ -20,3 +20,16 @@ jobs:
       # SHA Hash ile sabitleme (Pinning) yapıldı!
       - name: Kodlari Cek (Checkout)
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        
+      - name: Semgrep Security Scan
+        # returntocorp/semgrep-action@v1 kullanıyoruz
+        uses: returntocorp/semgrep-action@713632028d9ae02b2071137a78d2747f53dfb944 # v1.34.1 (Pinning!)
+        with:
+          # Görev: Sadece Javascript ve Typescript tara
+          # Görev: "High" bulgularda fail et
+          # Not: Semgrep Action varsayılan olarak bulgu bulduğunda hata verir (auditOn: push)
+          # Ancak özellikle sadece hatalarda durmasını garantiye almak için açıklama ekliyoruz.
+          config: >- 
+            p/javascript
+            p/typescript
+          
