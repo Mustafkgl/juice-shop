@@ -19,11 +19,13 @@ jobs:
       # 2. Adım: Kodları makineye çek (Checkout)
       # SHA Hash ile sabitleme (Pinning) yapıldı!
       - name: Kodlari Cek (Checkout)
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-        
+        uses: actions/checkout@v1 # v4.2.2
+      
+        # 3. Adım: Kodları Static Analysis ile Tara        
       - name: Semgrep Security Scan
         # returntocorp/semgrep-action@v1 kullanıyoruz
-        uses: returntocorp/semgrep-action@713632028d9ae02b2071137a78d2747f53dfb944 # v1.34.1 (Pinning!)
+        # Semgrep uygulamamizin kodlarinin "Bizim yazdigimiz Kodlar" kismini taramasini saglar hazir bilesikleri ve kutuphaneleri taramaz
+        uses: returntocorp/semgrep-action@v1 # versiyon tag kullandik
         with:
           # Görev: Sadece Javascript ve Typescript tara
           # Görev: "High" bulgularda fail et
@@ -32,4 +34,30 @@ jobs:
           config: >- 
             p/javascript
             p/typescript
-          
+        # 4. Adım: SCA ve Bağımlılık Taraması (Çarşamba Görevi)
+        
+      # Güvenlik Açığı Taraması için Trivy Kullanımı (Hazir paketlerin güvenlik açıklarını bulmak içindir)
+      - name: Trivy Vulnerability Scanner
+        # aquasecurity/trivy-action kullanıyoruz
+        uses: aquasecurity/trivy-action@18f2510ee396bbf400402947b394f2dd8c87dbb0 # v0.29.0 (Sabitlendi!)
+        with:
+          scan-type: 'fs'           # Dosya sistemini tara
+          scan-ref: '.'             # Mevcut dizini tara
+          format: 'table'           # Sonucu tablo olarak göster
+          exit-code: '1'            # Hata bulursan pipeline'ı durdur (Fail)
+          severity: 'CRITICAL,HIGH' # Sadece Kritik ve Yüksek seviyeleri önemse
+
+      # 5. Adım: SBOM (Yazılım Malzeme Listesi) Oluşturma. Listeyi bize tablo olarak verecektir.
+      - name: Generate SBOM
+        uses: aquasecurity/trivy-action@18f2510ee396bbf400402947b394f2dd8c87dbb0 # v0.29.0
+        with:
+          scan-type: 'fs'
+          format: 'cyclonedx'       # Endüstri standardı format
+          output: 'dependency-results.sbom.json'
+
+      # 6. Adım: SBOM Dosyasını Kaydet (Artifact)
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-dosyasi        # İndirilebilir dosyanın adı
+          path: dependency-results.sbom.json
