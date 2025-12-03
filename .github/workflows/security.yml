@@ -12,6 +12,11 @@ jobs:
     runs-on: ubuntu-latest  # GitHub'ın sağladığı sanal Ubuntu makinesinde çalış
     steps:
       
-      # İşte istediğin adım burası:
+      # 1. Adım: Tarama başlangıç çıktısı
       - name: Ekrana Mesaj Yaz
         run: echo "Güvenlik Taraması Başlıyor"
+
+      # 2. Adım: Kodları makineye çek (Checkout)
+      # SHA Hash ile sabitleme (Pinning) yapıldı!
+      - name: Kodlari Cek (Checkout)
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
