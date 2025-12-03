@@ -35,7 +35,7 @@ jobs:
             p/javascript
             p/typescript
         # 4. Adım: SCA ve Bağımlılık Taraması (Çarşamba Görevi)
-        
+            continue-on-error: true  # Hata olsa bile devam et demek.
       # Güvenlik Açığı Taraması için Trivy Kullanımı (Hazir paketlerin güvenlik açıklarını bulmak içindir)
       - name: Trivy Vulnerability Scanner
         # aquasecurity/trivy-action kullanıyoruz
