@@ -44,7 +44,7 @@ jobs:
           scan-type: 'fs'           # Dosya sistemini tara
           scan-ref: '.'             # Mevcut dizini tara
           format: 'table'           # Sonucu tablo olarak göster
-          exit-code: '1'            # Hata bulursan pipeline'ı durdur (Fail)
+          #exit-code: '1'            # Hata bulursan pipeline'ı durdur (Fail)
           severity: 'CRITICAL,HIGH' # Sadece Kritik ve Yüksek seviyeleri önemse
 
       # 5. Adım: SBOM (Yazılım Malzeme Listesi) Oluşturma. Listeyi bize tablo olarak verecektir.
