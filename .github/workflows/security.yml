@@ -64,9 +64,11 @@ jobs:
           name: sbom-dosyasi # İndirilebilir dosyanın adı
           path: dependency-results.sbom.json
 
-      # 7. Adım: Secret Scan (TruffleHog Kullanımı)
+      # 7. Adım: Secret Scan (Perşembe Görevi)
       - name: TruffleHog Secrets Scan
-        uses: trufflesecurity/trufflehog@main # Normalde hash ile sabitleriz ama TruffleHog çok sık güncellenir
+        uses: trufflesecurity/trufflehog@main
         with:
           path: ./
-          extra_args: --debug --only-verified
+          base: "" # Base'i boş bırakıyoruz
+          head: HEAD
+          extra_args: --debug --no-verification # <-- DEĞİŞİKLİK BURADA: Doğrulamayı kapattık
