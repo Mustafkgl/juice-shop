@@ -69,6 +69,4 @@ jobs:
         uses: trufflesecurity/trufflehog@main # Normalde hash ile sabitleriz ama TruffleHog çok sık güncellenir
         with:
           path: ./
-          base: origin/master
-          head: HEAD
           extra_args: --debug --only-verified
