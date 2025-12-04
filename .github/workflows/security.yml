@@ -71,5 +71,4 @@ jobs:
           path: ./
           base: origin/master
           head: HEAD
-          extra_args: --only-verified # Sadece doğrulanmış (gerçekten çalışan) sırları raporla (Gürültüyü azaltır)
           extra_args: --debug --only-verified
