@@ -62,3 +62,12 @@ jobs:
         with:
           name: sbom-dosyasi        # İndirilebilir dosyanın adı
           path: dependency-results.sbom.json
+          
+      # 7. Adım: Secret Scan (TruffleHog Kullanımı)
+      - name: TruffleHog Secrets Scan
+        uses: trufflesecurity/trufflehog@main # Normalde hash ile sabitleriz ama TruffleHog çok sık güncellenir
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+          extra_args: --only-verified # Sadece doğrulanmış (gerçekten çalışan) sırları raporla (Gürültüyü azaltır)
