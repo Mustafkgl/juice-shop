@@ -19,6 +19,8 @@ jobs:
       # SHA Hash ile sabitleme (Pinning) yapıldı!
       - name: Kodlari Cek (Checkout)
         uses: actions/checkout@v1 # v4.2.2
+          with:
+          fetch-depth: 0  # <--- BU SATIRI EKLİYORUZ (Tüm Git geçmişini indirir)
 
         # 3. Adım: Kodları Static Analysis ile Tara
       - name: Semgrep Security Scan
