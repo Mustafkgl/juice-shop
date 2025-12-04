@@ -1,74 +1,147 @@
 name: Guvenlik Kontrolu
 
-# Bu workflow ne zaman çalışsın?
-# Hem push yapıldığında hem de Pull Request açıldığında çalışsın.
+# ------------------------------------------------------------------------------------
+# TRIGGER (Tetikleyiciler) - Pipeline ne zaman çalışacak?
+# ------------------------------------------------------------------------------------
 on:
+  # 'push': Birisi kodu depoya gönderdiğinde çalışır.
   push:
-  pull_request:
+    # branches: [ "main" ]  <-- OLASI PARAMETRE: Sadece main dalına push gelirse çalıştır diyebilirdik.
+    # paths-ignore: ["**.md"] <-- OLASI PARAMETRE: Sadece README.md değiştiyse boşuna çalışma diyebilirdik.
+    # Biz şimdilik her push işleminde çalışmasını istiyoruz.
 
+  # 'pull_request': Birisi değişiklik önerisi (PR) açtığında çalışır.
+  pull_request:
+    # Bu, hatalı kodun ana dala (main) girmeden önce yakalanmasını sağlar.
+
+  # workflow_dispatch:      <-- KULLANILMAYAN PARAMETRE
+  # Neden kullanmadık? Bu parametre GitHub arayüzünden "Run Workflow" butonuyla elle tetiklemeyi sağlar.
+  # Şu an her şey otomatize olduğu için gerek duymadık.
+
+  # schedule:               <-- KULLANILMAYAN PARAMETRE
+  #   - cron: '0 0 * * 0'
+  # Neden kullanmadık? Bu parametre "Her Pazar gece yarısı çalış" gibi zamanlama yapar.
+  # Bu pipeline sürekli entegrasyon (CI) olduğu için anlık çalışmalı.
+
+# ------------------------------------------------------------------------------------
+# JOBS (İşler) - Yapılacak Görevler Listesi
+# ------------------------------------------------------------------------------------
 jobs:
-  # İşin adı (Status Check kısmında bu isim görünecek)
   basit-tarama:
-    runs-on: ubuntu-latest # GitHub'ın sağladığı sanal Ubuntu makinesinde çalış
+    # 'runs-on': Hangi bilgisayarda çalışacak?
+    runs-on: ubuntu-latest
+    # Neden Ubuntu? En ucuz, en hızlı ve Docker/tool desteği en geniş olan ortam.
+    # Alternatifler: windows-latest, macos-latest (Gereksiz pahalı ve yavaş olurdu).
+
+    # --------------------------------------------------------------------------------
+    # STEPS (Adımlar) - Sırasıyla uygulanacak komutlar
+    # --------------------------------------------------------------------------------
     steps:
-      # 1. Adım: Tarama başlangıç çıktısı
+      
+      # --- ADIM 1: Isınma Turu ---
       - name: Ekrana Mesaj Yaz
         run: echo "Güvenlik Taraması Başlıyor"
 
-      # 2. Adım: Kodları makineye çek (Checkout)
-      # SHA Hash ile sabitleme (Pinning) yapıldı!
+      # --- ADIM 2: Kodları İndirme (Checkout) ---
       - name: Kodlari Cek (Checkout)
-        uses: actions/checkout@v1 # v4.2.2
+        # 'uses': Hazır bir GitHub Action kullanıyoruz.
+        uses: actions/checkout@v1 
+        # Not: Normalde güvenlik için 'v4' ve SHA hash kullanmak en iyisidir (önceki günlerde yapmıştık).
         with:
-          fetch-depth: 0  # <--- BU SATIRI EKLİYORUZ (Tüm Git geçmişini indirir)
+          # ÖNEMLİ PARAMETRE: fetch-depth: 0
+          # Ne yapar? Projenin sadece son halini değil, TÜM geçmişini (tarihçesini) indirir.
+          # Neden Lazım? TruffleHog gibi araçlar, geçmişte silinmiş ama Git tarihinde kalmış şifreleri bulmak için buna muhtaçtır.
+          fetch-depth: 0 
+          
+          # Kullanılmayan Parametre: ref: main
+          # Neden? Belirli bir branch'i çekmek için kullanılır. Biz o an hangi branch tetiklendiyse onu istiyoruz.
 
-        # 3. Adım: Kodları Static Analysis ile Tara
+      # --- ADIM 3: SAST (Statik Kod Analizi) - Semgrep ---
       - name: Semgrep Security Scan
-        # returntocorp/semgrep-action@v1 kullanıyoruz
-        # Semgrep uygulamamizin kodlarinin "Bizim yazdigimiz Kodlar" kismini taramasini saglar hazir bilesikleri ve kutuphaneleri taramaz
-        uses: returntocorp/semgrep-action@v1 # versiyon tag kullandik
+        uses: returntocorp/semgrep-action@v1
         with:
-          # Görev: Sadece Javascript ve Typescript tara
-          # Görev: "High" bulgularda fail et
-          # Not: Semgrep Action varsayılan olarak bulgu bulduğunda hata verir (auditOn: push)
-          # Ancak özellikle sadece hatalarda durmasını garantiye almak için açıklama ekliyoruz.
+          # 'config': Hangi kuralları kullanacağız?
+          # p/javascript ve p/typescript: Semgrep'in topluluk tarafından yazılan hazır kural setleri.
+          # Neden? Projemiz JS/TS tabanlı olduğu için sadece bunları tarıyoruz, Java veya Python kurallarına gerek yok.
           config: >-
             p/javascript
             p/typescript
-        continue-on-error: true # Hata olsa bile devam et demek.
+          
+          # Kullanılmayan Parametre: auditOn: push
+          # Neden? Varsayılan olarak zaten push ile tetikleniyor.
+          
+          # Kullanılmayan Parametre: generateSarif: true
+          # Neden? Sonuçları GitHub'ın "Security" sekmesine (Code Scanning Alerts) yüklemek için kullanılır.
+          # Şu an sonuçları loglardan (console) okuduğumuz için buna girmedik.
 
-      # 4. Adım: SCA ve Bağımlılık Taraması (Çarşamba Görevi)
-      # Güvenlik Açığı Taraması için Trivy Kullanımı (Hazir paketlerin güvenlik açıklarını bulmak içindir)
+        # 'continue-on-error': Pipeline Patlamasın Diye
+        # True yapınca: Semgrep hata bulsa bile (exit code 1 dönse bile) pipeline durmaz, sonraki adıma geçer.
+        # Neden? Şu an öğrenme aşamasındayız, Trivy ve TruffleHog sonuçlarını da görmek istiyoruz.
+        # Gerçek hayatta bu genellikle 'false' olur ki hatalı kod canlıya gitmesin.
+        continue-on-error: true 
+
+      # --- ADIM 4: SCA (Bağımlılık Taraması) - Trivy ---
       - name: Trivy Vulnerability Scanner
-        # aquasecurity/trivy-action kullanıyoruz
-        uses: aquasecurity/trivy-action@18f2510ee396bbf400402947b394f2dd8c87dbb0 # v0.29.0 (Sabitlendi!)
+        uses: aquasecurity/trivy-action@18f2510ee396bbf400402947b394f2dd8c87dbb0 # SHA Pinning (En güvenli yöntem)
         with:
-          scan-type: "fs" # Dosya sistemini tara
-          scan-ref: "." # Mevcut dizini tara
-          format: "table" # Sonucu tablo olarak göster
-          #exit-code: '1'            # Hata bulursan pipeline'ı durdur (Fail)
-          severity: "CRITICAL,HIGH" # Sadece Kritik ve Yüksek seviyeleri önemse
+          scan-type: "fs" 
+          # fs (filesystem): Dosya sistemini tara demek.
+          # Alternatif: 'image' (Docker imajı tarar). Biz henüz Docker imajı build etmedik, kaynak kodu tarıyoruz.
+          
+          scan-ref: "." # Şu anki dizini (.) tara.
+          
+          format: "table" 
+          # table: İnsan okuması kolay tablo formatı.
+          # Alternatif: 'json', 'sarif'. Otomasyon sistemlerine veri aktaracaksak json kullanırdık.
+          
+          severity: "CRITICAL,HIGH" 
+          # Sadece 'Kritik' ve 'Yüksek' seviyeli açıkları göster.
+          # Neden? 'Medium' ve 'Low' seviyeler çok fazla gürültü (false positive veya önemsiz uyarı) yaratabilir. Odağımızı kaybetmeyelim.
+          
+          # exit-code: '1'  <-- YORUM SATIRINA ALDIK (KULLANMADIK)
+          # Neden? Eğer bunu açarsak, Trivy açık bulduğunda pipeline'ı "Kırmızı" yakıp durdurur.
+          # Biz şu an akışın devam etmesini istediğimiz için kapalı tuttuk (Semgrep'teki continue-on-error mantığı gibi).
 
-      # 5. Adım: SBOM (Yazılım Malzeme Listesi) Oluşturma. Listeyi bize tablo olarak verecektir.
+      # --- ADIM 5: SBOM (Yazılım Envanteri) Oluşturma ---
       - name: Generate SBOM
-        uses: aquasecurity/trivy-action@18f2510ee396bbf400402947b394f2dd8c87dbb0 # v0.29.0
+        uses: aquasecurity/trivy-action@18f2510ee396bbf400402947b394f2dd8c87dbb0
         with:
           scan-type: "fs"
-          format: "cyclonedx" # Endüstri standardı format
+          format: "cyclonedx" 
+          # cyclonedx: SBOM dünyasının en popüler standardı.
+          # Alternatif: 'spdx', 'spdx-json'. CycloneDX araç desteği açısından şu an daha popüler.
+          
           output: "dependency-results.sbom.json"
+          # Çıktıyı ekrana basma, bu isimde bir dosyaya kaydet.
 
-      # 6. Adım: SBOM Dosyasını Kaydet (Artifact)
+      # --- ADIM 6: Dosyayı Sakla (Artifact Upload) ---
       - name: Upload SBOM
         uses: actions/upload-artifact@v4
         with:
-          name: sbom-dosyasi # İndirilebilir dosyanın adı
-          path: dependency-results.sbom.json
+          name: sbom-dosyasi # GitHub arayüzünde görünecek indirme butonu ismi.
+          path: dependency-results.sbom.json # Hangi dosyayı yedekleyelim?
+          
+          # Kullanılmayan Parametre: retention-days: 5
+          # Neden? Dosyanın kaç gün saklanacağını belirtir. Varsayılan (90 gün) bizim için yeterli.
 
-      # 7. Adım: Secret Scan (Perşembe Görevi)
+      # --- ADIM 7: Sır/Şifre Taraması (Secret Scanning) - TruffleHog ---
       - name: TruffleHog Secrets Scan
         uses: trufflesecurity/trufflehog@main
         with:
           path: ./
-          base: "" # Base'i boş bırakıyoruz
+          
+          # 'base' ve 'head': Referans Noktaları
+          # Normalde: base: main, head: HEAD yapılır ki sadece "yeni eklenen" kodlar taransın.
+          # Bizim Yaptığımız: Boş bıraktık ("").
+          # Neden? Referans hatası (shallow clone sorunu) yaşamamak ve TÜM GEÇMİŞİ taramak için "Nuclear Option" kullandık.
+          base: "" 
           head: HEAD
-          extra_args: --debug --no-verification # <-- DEĞİŞİKLİK BURADA: Doğrulamayı kapattık
+          
+          # 'extra_args': Ekstra Komutlar
+          # --debug: Hata ayıklama modunu açar, daha detaylı log basar.
+          # --no-verification: Bulduğun şifreyi doğrulama, direkt raporla.
+          # Neden --no-verification? Çünkü biz "dummy" (sahte/örnek) AWS anahtarları koyduk. 
+          # TruffleHog normalde "Bu anahtar AWS'de çalışıyor mu?" diye kontrol eder. Çalışmıyorsa sessiz kalır.
+          # Biz sahte anahtarın bile yakalanmasını istediğimiz için doğrulamayı kapattık.
+          # Gerçek hayatta: '--only-verified' kullanılır ki sadece GEÇERLİ (tehlikeli) şifreler raporlansın.
+          extra_args: --debug --no-verification
